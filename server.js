@@ -1,5 +1,13 @@
 const fs = require('fs');
 const fastify = require("fastify")();
+const fastifyCors = require("@fastify/cors");
+
+// Enable CORS
+fastify.register(fastifyCors, {
+  origin: "*", // Allow all origins (update as needed for security)
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"], // Specify allowed HTTP methods
+  allowedHeaders: ["Content-Type", "Authorization"], // Specify allowed headers
+});
 
 // Define a function to read messages from the JSON file
 function readMessagesFromFile() {
