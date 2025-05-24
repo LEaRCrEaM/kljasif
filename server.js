@@ -151,7 +151,9 @@ fastify.get("/api/resetMessages", (request, reply) => {
 });
 
 // Run the server and listen on a specific port
-fastify.listen(process.env.PORT || 3000, (err, address) => {
+const PORT = process.env.PORT || 3000;
+
+fastify.listen({ port: PORT, host: '0.0.0.0' }, (err, address) => {
   if (err) {
     console.error(err);
     process.exit(1);
