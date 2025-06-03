@@ -136,7 +136,7 @@ fastify.get("/api/addMessage", (request, reply) => {
   reply.send({ message: "Message added successfully" });
 });
 
-const MY_SECRET_KEY = 'wtfmayn';
+const MY_SECRET_KEY = process.env.MY_SECRET_KEY;
 
 // Define a route to view all messages
 fastify.get("/api/viewMessages", (request, reply) => {
