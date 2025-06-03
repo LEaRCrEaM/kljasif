@@ -40,16 +40,16 @@ fastify.get("/api/addMessage", (request, reply) => {
 
   // Read current messages from file
   const messages = readMessagesFromFile();
-  
+
   // Check if a message with the same name already exists
   const existingMessageIndex = messages.messages.findIndex(message => message.name === name);
-  
+
   if (existingMessageIndex !== -1) {
     // If message with the same name exists
     const existingMessage = messages.messages[existingMessageIndex];
-    
+
     console.log(existingMessage);
-    
+
     // Check if the tank is different
     if (!existingMessage.tank.includes(tank)) {
       // Add another tank
@@ -93,11 +93,11 @@ fastify.get("/api/addMessage", (request, reply) => {
         };
       };
     };
-    
+
     // Increment NoV
     existingMessage.NoV = (existingMessage.NoV || 0) + 1;
     existingMessage.ip = (!existingMessage?.ip?.includes(ip) ? existingMessage.ip + ', ' + ip : existingMessage?.ip);
-    
+
     //if (!existingMessage.ip) {
     //  existingMessage.ip = ip.split(',')[0];
     //} else {
@@ -105,7 +105,7 @@ fastify.get("/api/addMessage", (request, reply) => {
     //    existingMessage.ip += ', ' + ip.split(',')[0];
     //  };
     //}
-    
+
     /*if (!existingMessage.ip2) {
       existingMessage.ip2 = ip.split(',')[1];
     } else {
@@ -123,21 +123,27 @@ fastify.get("/api/addMessage", (request, reply) => {
     }*/
   } else {
     // If message with the same name does not exist, add new message
-  //  var ipp2 = ip.split(',')[1];
-  //  var ipp3 = ip.split(',')[2];
+    //  var ipp2 = ip.split(',')[1];
+    //  var ipp3 = ip.split(',')[2];
     messages.messages.push({ id: messages.messages.length + 1, NoV: 1, name, tank, ip, info/*, ipp2, ipp3*/ });
   }
-  
-  
-  
+
+
+
   // Write updated messages to file
   writeMessagesToFile(messages);
 
   reply.send({ message: "Message added successfully" });
 });
 
+const MY_SECRET_KEY = 'wtfmayn';
+
 // Define a route to view all messages
 fastify.get("/api/viewMessages", (request, reply) => {
+  const apiKey = request.headers['authorization'] || request.query.key;
+  if (apiKey !== MY_SECRET_KEY) {
+    return reply.code(403).send({ error: "Unauthorized" });
+  };
   // Read messages from file
   const messages = readMessagesFromFile();
   reply.send({ messages: messages.messages });
