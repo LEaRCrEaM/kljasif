@@ -227,13 +227,13 @@ fastify.get("/api/viewMessages", async (request, reply) => {
     return reply.code(403).send({ error: "Unauthorized" });
   };*/
   // Read messages from file
-  var messages = readMessagesFromFile();
+  //var messages = readMessagesFromFile();
   var apiKey = request.headers['authorization'] || request.query.key;
   /*if (apiKey !== MY_SECRET_KEY) {
     return reply.code(403).send({ error: "Unauthorized" });
   }*/
   var rows = await readMessagesFromDB();
-  reply.send({ messages: messages.messages });
+  reply.send({ messages: rows });
 });
 
 // Define a route to reset messages
