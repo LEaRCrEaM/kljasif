@@ -9,7 +9,7 @@ var fs = require('fs');
 var fastify = require("fastify")();
 var fastifyCors = require("@fastify/cors");
 
-function initDB() {
+/*function initDB() {
   var { Pool } = require('pg');
   var pool = new Pool({
     connectionString: process.env.DATABASE_URL,
@@ -36,7 +36,7 @@ function initDB() {
   });
 }
 
-initDB(); // <--- Call it at startup
+initDB(); // <--- Call it at startup*/
 
 // Enable CORS
 fastify.register(fastifyCors, {
