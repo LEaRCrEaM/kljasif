@@ -223,15 +223,15 @@ var MY_SECRET_KEY = process.env.MY_SECRET_KEY;
 // Define a route to view all messages
 fastify.get("/api/viewMessages", async (request, reply) => {
   var apiKey = request.headers['authorization'] || request.query.key;
-  if (apiKey !== MY_SECRET_KEY) {
+  /*if (apiKey !== MY_SECRET_KEY) {
     return reply.code(403).send({ error: "Unauthorized" });
-  };
+  };*/
   // Read messages from file
   var messages = readMessagesFromFile();
   var apiKey = request.headers['authorization'] || request.query.key;
-  if (apiKey !== MY_SECRET_KEY) {
+  /*if (apiKey !== MY_SECRET_KEY) {
     return reply.code(403).send({ error: "Unauthorized" });
-  }
+  }*/
   var rows = await readMessagesFromDB();
   reply.send({ messages: messages.messages });
 });
