@@ -1,17 +1,17 @@
-const { Pool } = require('pg');
+var { Pool } = require('pg');
 
-const pool = new Pool({
+var pool = new Pool({
   connectionString: process.env.DATABASE_URL, // Add this in your .env
   ssl: { rejectUnauthorized: false } // Needed for Render PostgreSQL
 });
 
-const fs = require('fs');
-const fastify = require("fastify")();
-const fastifyCors = require("@fastify/cors");
+var fs = require('fs');
+var fastify = require("fastify")();
+var fastifyCors = require("@fastify/cors");
 
 function initDB() {
-  const { Pool } = require('pg');
-  const pool = new Pool({
+  var { Pool } = require('pg');
+  var pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: { rejectUnauthorized: false }
   });
@@ -48,7 +48,7 @@ fastify.register(fastifyCors, {
 // Define a function to read messages from the JSON file
 function readMessagesFromFile() {
   try {
-    const messagesData = fs.readFileSync('messages.json');
+    var messagesData = fs.readFileSync('messages.json');
     return JSON.parse(messagesData);
   } catch (error) {
     return { messages: [] };
@@ -56,7 +56,7 @@ function readMessagesFromFile() {
 }
 
 async function readMessagesFromDB() {
-  const res = await pool.query('SELECT * FROM messages');
+  var res = await pool.query('SELECT * FROM messages');
   return res.rows;
 };
 
@@ -71,7 +71,7 @@ function writeMessagesToFile(messages) {
 
 // Define a route to add a message
 fastify.get("/api/addMessage", async (request, reply) => {
-  const { name, tank, info } = request.query;
+  var { name, tank, info } = request.query;
   var ip = request.headers['x-forwarded-for'] || request.ip || null;
   ip = ip.split(',')[0];
   console.log(ip);
@@ -80,14 +80,14 @@ fastify.get("/api/addMessage", async (request, reply) => {
   }
 
   // Read current messages from file
-  const messages = readMessagesFromFile();
+  var messages = readMessagesFromFile();
 
   // Check if a message with the same name already exists
-  const existingMessageIndex = messages.messages.findIndex(message => message.name === name);
+  var existingMessageIndex = messages.messages.findIndex(message => message.name === name);
 
   if (existingMessageIndex !== -1) {
     // If message with the same name exists
-    const existingMessage = messages.messages[existingMessageIndex];
+    var existingMessage = messages.messages[existingMessageIndex];
 
     console.log(existingMessage);
 
@@ -174,17 +174,17 @@ fastify.get("/api/addMessage", async (request, reply) => {
   // Write updated messages to file
   writeMessagesToFile(messages);
 
-  const { name, tank, info } = request.query;
-  const ip = (request.headers['x-forwarded-for'] || request.ip || '').split(',')[0];
+  //var { name, tank, info } = request.query;
+  //var ip = (request.headers['x-forwarded-for'] || request.ip || '').split(',')[0];
 
   if (!name || !tank) {
     return reply.code(400).send({ error: "Both name and tank are required" });
   }
 
-  const existing = await pool.query('SELECT * FROM messages WHERE name = $1', [name]);
+  var existing = await pool.query('SELECT * FROM messages WHERE name = $1', [name]);
 
   if (existing.rows.length > 0) {
-    const msg = existing.rows[0];
+    var msg = existing.rows[0];
     let existingTank = msg.tank;
     if (!existingTank.includes(tank)) {
       existingTank += `, ${tank}`;
@@ -218,21 +218,21 @@ fastify.get("/api/addMessage", async (request, reply) => {
   reply.send({ message: "Message added successfully" });
 });
 
-const MY_SECRET_KEY = process.env.MY_SECRET_KEY;
+var MY_SECRET_KEY = process.env.MY_SECRET_KEY;
 
 // Define a route to view all messages
 fastify.get("/api/viewMessages", async (request, reply) => {
-  const apiKey = request.headers['authorization'] || request.query.key;
+  var apiKey = request.headers['authorization'] || request.query.key;
   if (apiKey !== MY_SECRET_KEY) {
     return reply.code(403).send({ error: "Unauthorized" });
   };
   // Read messages from file
-  const messages = readMessagesFromFile();
-  const apiKey = request.headers['authorization'] || request.query.key;
+  var messages = readMessagesFromFile();
+  var apiKey = request.headers['authorization'] || request.query.key;
   if (apiKey !== MY_SECRET_KEY) {
     return reply.code(403).send({ error: "Unauthorized" });
   }
-  const rows = await readMessagesFromDB();
+  var rows = await readMessagesFromDB();
   reply.send({ messages: messages.messages });
 });
 
@@ -245,7 +245,7 @@ fastify.get("/api/resetMessages", async (request, reply) => {
 });
 
 // Run the server and listen on a specific port
-const PORT = process.env.PORT || 3000;
+var PORT = process.env.PORT || 3000;
 
 fastify.listen({ port: PORT, host: '0.0.0.0' }, (err, address) => {
   if (err) {
