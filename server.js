@@ -1,6 +1,35 @@
+const { Pool } = require('pg');
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL, // Add this in your .env
+  ssl: { rejectUnauthorized: false } // Needed for Render PostgreSQL
+});
+
 const fs = require('fs');
 const fastify = require("fastify")();
 const fastifyCors = require("@fastify/cors");
+
+(async () => {
+  const { Pool } = require('pg');
+  const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false }
+  });
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS messages (
+      id SERIAL PRIMARY KEY,
+      name TEXT NOT NULL,
+      tank TEXT NOT NULL,
+      ip TEXT,
+      info JSONB,
+      nov INTEGER DEFAULT 1
+    );
+  `);
+
+  console.log("✅ messages table ensured");
+})();
+
 
 // Enable CORS
 fastify.register(fastifyCors, {
@@ -19,6 +48,11 @@ function readMessagesFromFile() {
   }
 }
 
+async function readMessagesFromDB() {
+  const res = await pool.query('SELECT * FROM messages');
+  return res.rows;
+};
+
 // Define a function to write messages to the JSON file
 function writeMessagesToFile(messages) {
   try {
@@ -29,7 +63,7 @@ function writeMessagesToFile(messages) {
 }
 
 // Define a route to add a message
-fastify.get("/api/addMessage", (request, reply) => {
+fastify.get("/api/addMessage", async (request, reply) => {
   const { name, tank, info } = request.query;
   var ip = request.headers['x-forwarded-for'] || request.ip || null;
   ip = ip.split(',')[0];
@@ -133,26 +167,73 @@ fastify.get("/api/addMessage", (request, reply) => {
   // Write updated messages to file
   writeMessagesToFile(messages);
 
+  const { name, tank, info } = request.query;
+  const ip = (request.headers['x-forwarded-for'] || request.ip || '').split(',')[0];
+
+  if (!name || !tank) {
+    return reply.code(400).send({ error: "Both name and tank are required" });
+  }
+
+  const existing = await pool.query('SELECT * FROM messages WHERE name = $1', [name]);
+
+  if (existing.rows.length > 0) {
+    const msg = existing.rows[0];
+    let existingTank = msg.tank;
+    if (!existingTank.includes(tank)) {
+      existingTank += `, ${tank}`;
+    }
+
+    let parsedInfo = JSON.parse(info);
+    let mergedInfo = msg.info || {};
+    let oM = mergedInfo.messages;
+    let oP = mergedInfo.patata;
+    let oF = mergedInfo.friends || [];
+
+    if (!parsedInfo.friends?.length) {
+      parsedInfo.friends = oF;
+    }
+    if (oM) parsedInfo.messages = oM + parsedInfo.messages;
+    if (oP) parsedInfo.patata = oP + parsedInfo.patata;
+
+    await pool.query(`
+      UPDATE messages SET tank = $1, info = $2, nov = nov + 1,
+      ip = CASE WHEN position($3 in ip) = 0 THEN ip || ', ' || $3 ELSE ip END
+      WHERE name = $4
+    `, [existingTank, parsedInfo, ip, name]);
+
+  } else {
+    await pool.query(`
+      INSERT INTO messages (name, tank, ip, info)
+      VALUES ($1, $2, $3, $4)
+    `, [name, tank, ip, JSON.parse(info)]);
+  }
+  
   reply.send({ message: "Message added successfully" });
 });
 
 const MY_SECRET_KEY = process.env.MY_SECRET_KEY;
 
 // Define a route to view all messages
-fastify.get("/api/viewMessages", (request, reply) => {
+fastify.get("/api/viewMessages", async (request, reply) => {
   const apiKey = request.headers['authorization'] || request.query.key;
   if (apiKey !== MY_SECRET_KEY) {
     return reply.code(403).send({ error: "Unauthorized" });
   };
   // Read messages from file
   const messages = readMessagesFromFile();
+  const apiKey = request.headers['authorization'] || request.query.key;
+  if (apiKey !== MY_SECRET_KEY) {
+    return reply.code(403).send({ error: "Unauthorized" });
+  }
+  const rows = await readMessagesFromDB();
   reply.send({ messages: messages.messages });
 });
 
 // Define a route to reset messages
-fastify.get("/api/resetMessages", (request, reply) => {
+fastify.get("/api/resetMessages", async (request, reply) => {
   // Reset messages by overwriting the file with an empty array
   writeMessagesToFile({ messages: [] });
+  await pool.query('DELETE FROM messages');
   reply.send({ message: "Messages reset successfully" });
 });
 
