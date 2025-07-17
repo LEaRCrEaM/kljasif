@@ -9,14 +9,14 @@ const fs = require('fs');
 const fastify = require("fastify")();
 const fastifyCors = require("@fastify/cors");
 
-(async () => {
+function initDB() {
   const { Pool } = require('pg');
   const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: { rejectUnauthorized: false }
   });
 
-  await pool.query(`
+  pool.query(`
     CREATE TABLE IF NOT EXISTS messages (
       id SERIAL PRIMARY KEY,
       name TEXT NOT NULL,
@@ -25,11 +25,18 @@ const fastifyCors = require("@fastify/cors");
       info JSONB,
       nov INTEGER DEFAULT 1
     );
-  `);
+  `)
+  .then(() => {
+    console.log("✅ messages table ensured");
+    pool.end();
+  })
+  .catch(err => {
+    console.error("❌ Error ensuring table:", err);
+    pool.end();
+  });
+}
 
-  console.log("✅ messages table ensured");
-})();
-
+initDB(); // <--- Call it at startup
 
 // Enable CORS
 fastify.register(fastifyCors, {
